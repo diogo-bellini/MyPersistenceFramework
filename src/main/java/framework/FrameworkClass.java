@@ -87,7 +87,6 @@ public abstract class FrameworkClass {
                 }
 
                 String sql = "UPDATE " + tableName + " SET " + updateColumns + " WHERE " + idColumn + " = ?";
-                System.out.println(sql);
 
                 try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
                      PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -120,7 +119,6 @@ public abstract class FrameworkClass {
             interrogationPointers = interrogationPointers.substring(0, interrogationPointers.length() - 2);
 
             String sql = "INSERT INTO " + tableName + " (" + columnsString + ") VALUES (" + interrogationPointers + ")";
-            System.out.println(sql);
 
             try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -286,6 +284,82 @@ public abstract class FrameworkClass {
             return false;
         }
     }
+
+    public void find(String fieldName, Object value) {
+        Class<?> clazz = this.getClass();
+        if (!clazz.isAnnotationPresent(Entity.class)) {
+            System.out.println("Class is not an Entity");
+            return;
+        }
+
+        String tableName;
+        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
+        String entityTableName = entityAnnotation.tableName();
+        if (entityTableName.trim().isEmpty()) {
+            tableName = clazz.getSimpleName();
+        } else {
+            tableName = entityTableName;
+        }
+
+        Field[] fields = clazz.getDeclaredFields();
+        String columnName = null;
+        Field targetField = null;
+
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName) && field.isAnnotationPresent(Column.class)) {
+                Column col = field.getAnnotation(Column.class);
+                String annotatedName = col.name();
+                if (annotatedName.trim().isEmpty()) {
+                    columnName = field.getName();
+                } else {
+                    columnName = annotatedName;
+                }
+                targetField = field;
+                break;
+            }
+        }
+
+        if (columnName == null || targetField == null) {
+            System.out.println("Field not found or not annotated with @Column: " + fieldName);
+            return;
+        }
+
+        String sql = "SELECT * FROM " + tableName + " WHERE " + columnName + " = ?";
+
+        try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setObject(1, value);
+            var rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                for (Field field : fields) {
+                    if (!field.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+
+                    Column col = field.getAnnotation(Column.class);
+                    String colName = col.name();
+                    if (colName.trim().isEmpty()) {
+                        colName = field.getName();
+                    }
+
+                    field.setAccessible(true);
+                    Object fieldValue = rs.getObject(colName);
+                    field.set(this, fieldValue);
+                }
+                return;
+            } else {
+                System.out.println("No record found with " + columnName + " = " + value);
+                return;
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return;
+        }
+    }
+
 
     private boolean checkExistsInDB(Object idValue, String tableName, String idColumnName) {
         String sql = "SELECT 1 FROM " + tableName + " WHERE " + idColumnName + " = ? LIMIT 1";
