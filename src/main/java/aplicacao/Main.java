@@ -12,6 +12,10 @@ public class Main {
         testeInstance.setUserDB("root");
         testeInstance.setPassDB("root");
         testeInstance.setId(3L);
+        testeInstance.setName("ATA2");
+        testeInstance.setDescription("ATA2");
+
+        testeInstance.save();
 
         System.out.println(testeInstance.verifyExistence());
     }

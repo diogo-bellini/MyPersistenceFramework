@@ -20,7 +20,7 @@ public abstract class FrameworkClass {
         }
     }
 
-    public void save(){
+    public void save() {
         Class<?> clazz = this.getClass();
         if (clazz.isAnnotationPresent(Entity.class)) {
             String className = clazz.getSimpleName();
@@ -28,7 +28,7 @@ public abstract class FrameworkClass {
             Entity entityAnnotation = clazz.getAnnotation(Entity.class);
             String entityTableName = entityAnnotation.tableName();
 
-            if(entityTableName.trim().isEmpty()){
+            if (entityTableName.trim().isEmpty()) {
                 entityTableName = className;
             }
             String tableName = entityTableName;
@@ -37,40 +37,93 @@ public abstract class FrameworkClass {
             List<String> columnsProcessed = new ArrayList<>();
             List<Field> fieldsToInsert = new ArrayList<>();
 
+            Field idField = null;
+            String idColumn = null;
+            Object idValue = null;
+
             for (Field field : fields) {
-                if (field.isAnnotationPresent(Id.class)) {
+                if (field.isAnnotationPresent(Id.class) && field.isAnnotationPresent(Column.class)) {
+                    idField = field;
+                    Column col = field.getAnnotation(Column.class);
+                    String name = col.name();
+                    if (name.trim().isEmpty()) {
+                        idColumn = field.getName();
+                    } else {
+                        idColumn = name;
+                    }
+                    try {
+                        field.setAccessible(true);
+                        idValue = field.get(this);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
                     continue;
                 }
-                if(field.isAnnotationPresent(Column.class)){
-                    try{
-                        String fieldName = field.getName();
 
+                if (field.isAnnotationPresent(Column.class)) {
+                    try {
                         Column columnAnnotation = field.getAnnotation(Column.class);
                         String columnName = columnAnnotation.name();
 
-                        if(columnName.trim().isEmpty()){
-                            columnName = fieldName;
+                        if (columnName.trim().isEmpty()) {
+                            columnName = field.getName();
                         }
 
                         columnsProcessed.add(columnName);
                         fieldsToInsert.add(field);
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
                 }
             }
+
+            if (this.verifyExistence()) {
+                String updateColumns = "";
+                for (int i = 0; i < columnsProcessed.size(); i++) {
+                    updateColumns += columnsProcessed.get(i) + " = ?";
+                    if (i < columnsProcessed.size() - 1) {
+                        updateColumns += ", ";
+                    }
+                }
+
+                String sql = "UPDATE " + tableName + " SET " + updateColumns + " WHERE " + idColumn + " = ?";
+                System.out.println(sql);
+
+                try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
+                     PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+                    int i = 0;
+                    for (; i < fieldsToInsert.size(); i++) {
+                        Field field = fieldsToInsert.get(i);
+                        field.setAccessible(true);
+                        Object value = field.get(this);
+                        stmt.setObject(i + 1, value);
+                    }
+
+                    stmt.setObject(i + 1, idValue);
+
+                    System.out.println(stmt.toString());
+                    stmt.executeUpdate();
+
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+
+                return;
+            }
+
             String columnsString = String.join(", ", columnsProcessed);
             String interrogationPointers = "";
-            for(int i = 0; i < columnsProcessed.size(); i++){
+            for (int i = 0; i < columnsProcessed.size(); i++) {
                 interrogationPointers += "?, ";
             }
             interrogationPointers = interrogationPointers.substring(0, interrogationPointers.length() - 2);
-            String sql = "INSERT INTO " + tableName + " (" + columnsString + ") VALUES ("+ interrogationPointers +")";
+
+            String sql = "INSERT INTO " + tableName + " (" + columnsString + ") VALUES (" + interrogationPointers + ")";
             System.out.println(sql);
 
-            try(Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
-                PreparedStatement stmt = conn.prepareStatement(sql)){
+            try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
                 for (int i = 0; i < fieldsToInsert.size(); i++) {
                     Field field = fieldsToInsert.get(i);
@@ -82,15 +135,15 @@ public abstract class FrameworkClass {
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
 
-        }
-        else {
+        } else {
             System.out.println("Class is not an Entity");
         }
     }
+
 
     public void loadAll(){
         Class<?> clazz = this.getClass();
