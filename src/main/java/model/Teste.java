@@ -1,11 +1,17 @@
 package model;
 
+import framework.FrameworkClass;
 import framework.Column;
 import framework.Entity;
-import framework.FrameworkClass;
+import framework.Id;
 
 @Entity(tableName = "TestName")
 public class Teste extends FrameworkClass {
+
+    @Id
+    @Column
+    private Long id;
+
     @Column(name = "name")
     private String name;
 
@@ -37,5 +43,13 @@ public class Teste extends FrameworkClass {
 
     public void setMyBool(Boolean myBool) {
         this.myBool = myBool;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

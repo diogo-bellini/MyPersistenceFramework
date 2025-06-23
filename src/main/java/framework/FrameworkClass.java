@@ -38,6 +38,9 @@ public abstract class FrameworkClass {
             List<Field> fieldsToInsert = new ArrayList<>();
 
             for (Field field : fields) {
+                if (field.isAnnotationPresent(Id.class)) {
+                    continue;
+                }
                 if(field.isAnnotationPresent(Column.class)){
                     try{
                         String fieldName = field.getName();
@@ -89,20 +92,20 @@ public abstract class FrameworkClass {
         }
     }
 
-//    public void load(){
-//        Class<?> clazz = this.getClass();
-//        System.out.println("Class: " + clazz.getName());
-//    }
-//
-//    public void verifyExistence(){
-//        Class<?> clazz = this.getClass();
-//        System.out.println("Class: " + clazz.getName());
-//    }
-//
-//    public void find(){
-//        Class<?> clazz = this.getClass();
-//        System.out.println("Class: " + clazz.getName());
-//    }
+    public void load(){
+        Class<?> clazz = this.getClass();
+        System.out.println("Class: " + clazz.getName());
+    }
+
+    public void verifyExistence(){
+        Class<?> clazz = this.getClass();
+        System.out.println("Class: " + clazz.getName());
+    }
+
+    public void find(){
+        Class<?> clazz = this.getClass();
+        System.out.println("Class: " + clazz.getName());
+    }
 
     public void setUrlDB(String urlDB) {
         this.urlDB = urlDB;
