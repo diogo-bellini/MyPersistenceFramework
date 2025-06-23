@@ -92,20 +92,107 @@ public abstract class FrameworkClass {
         }
     }
 
-    public void load(){
-        Class<?> clazz = this.getClass();
-        System.out.println("Class: " + clazz.getName());
-    }
+//    public void load(){
+//        Class<?> clazz = this.getClass();
+//        System.out.println("Class: " + clazz.getName());
+//    }
+//
+//    public void verifyExistence(){
+//        Class<?> clazz = this.getClass();
+//        if (clazz.isAnnotationPresent(Entity.class)) {
+//
+//        }
+//        else {
+//            System.out.println("Class is not an Entity");
+//        }
+//    }
 
-    public void verifyExistence(){
-        Class<?> clazz = this.getClass();
-        System.out.println("Class: " + clazz.getName());
-    }
+public void findById() {
+    Class<?> clazz = this.getClass();
+    if (clazz.isAnnotationPresent(Entity.class)) {
+        String className = clazz.getSimpleName();
 
-    public void find(){
-        Class<?> clazz = this.getClass();
-        System.out.println("Class: " + clazz.getName());
+        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
+        String entityTableName = entityAnnotation.tableName();
+
+        if (entityTableName.trim().isEmpty()) {
+            entityTableName = className;
+        }
+        String tableName = entityTableName;
+
+        Field[] fields = clazz.getDeclaredFields();
+        Object idValue = null;
+        String idColumnName = null;
+        Field idField = null;
+
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Id.class) && field.isAnnotationPresent(Column.class)) {
+                try {
+                    idField = field;
+                    field.setAccessible(true);
+                    idValue = field.get(this);
+
+                    Column columnAnnotation = field.getAnnotation(Column.class);
+                    String columnName = columnAnnotation.name();
+
+                    if (columnName.trim().isEmpty()) {
+                        idColumnName = field.getName();
+                    } else {
+                        idColumnName = columnName;
+                    }
+
+                    break;
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    return;
+                }
+            }
+        }
+
+        if (idField == null || idValue == null) {
+            System.out.println("ID not defined.");
+            return;
+        }
+
+        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = ?";
+
+        try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setObject(1, idValue);
+            var rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                for (Field field : fields) {
+                    if (!field.isAnnotationPresent(Column.class)){
+                        continue;
+                    }
+
+                    Column columnAnnotation = field.getAnnotation(Column.class);
+                    String columnName = columnAnnotation.name();
+
+                    if (columnName.trim().isEmpty()) {
+                        columnName = field.getName();
+                    }
+
+                    field.setAccessible(true);
+                    Object value = rs.getObject(columnName);
+                    field.set(this, value);
+                }
+            } else {
+                System.out.println("Instance not found.");
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+    } else {
+        System.out.println("Class is not an Entity");
     }
+}
+
+
 
     public void setUrlDB(String urlDB) {
         this.urlDB = urlDB;

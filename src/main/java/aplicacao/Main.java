@@ -9,10 +9,18 @@ public class Main {
         testeInstance.setUserDB("root");
         testeInstance.setPassDB("root");
 
-        testeInstance.setName("Name Example");
-        testeInstance.setDescription("Description example");
-        testeInstance.setMyBool(true);
+        testeInstance.setId(3L);
+//        testeInstance.setName("Name Example 2");
+//        testeInstance.setDescription("Description example 2");
+//        testeInstance.setMyBool(false);
 
-        testeInstance.save();
+//        testeInstance.save();
+        testeInstance.findById();
+
+        System.out.println(testeInstance.getId());
+        System.out.println(testeInstance.getName());
+        System.out.println(testeInstance.getDescription());
+        System.out.println(testeInstance.getMyBool());
+
     }
 }
