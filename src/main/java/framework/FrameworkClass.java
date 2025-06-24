@@ -143,10 +143,60 @@ public abstract class FrameworkClass {
     }
 
 
-    public void loadAll(){
-        Class<?> clazz = this.getClass();
-        System.out.println("Class: " + clazz.getName());
+    public static <T extends FrameworkClass> List<T> loadAll(Class<T> clazz, String urlDB, String userDB, String passDB) {
+        List<T> results = new ArrayList<>();
+
+        if (!clazz.isAnnotationPresent(Entity.class)) {
+            System.out.println("Class is not an Entity");
+            return results;
+        }
+
+        Entity entityAnnotation = clazz.getAnnotation(Entity.class);
+        String tableName = entityAnnotation.tableName();
+        if (tableName.trim().isEmpty()) {
+            tableName = clazz.getSimpleName();
+        }
+
+        String sql = "SELECT * FROM " + tableName;
+
+        try (Connection conn = DriverManager.getConnection(urlDB, userDB, passDB);
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             var rs = stmt.executeQuery()) {
+
+            Field[] fields = clazz.getDeclaredFields();
+
+            while (rs.next()) {
+                T instance = clazz.getDeclaredConstructor().newInstance();
+                instance.setUrlDB(urlDB);
+                instance.setUserDB(userDB);
+                instance.setPassDB(passDB);
+
+                for (Field field : fields) {
+                    if (!field.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+
+                    Column columnAnnotation = field.getAnnotation(Column.class);
+                    String columnName = columnAnnotation.name();
+                    if (columnName.trim().isEmpty()) {
+                        columnName = field.getName();
+                    }
+
+                    field.setAccessible(true);
+                    Object value = rs.getObject(columnName);
+                    field.set(instance, value);
+                }
+
+                results.add(instance);
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return results;
     }
+
 
     public boolean verifyExistence() {
         Class<?> clazz = this.getClass();
