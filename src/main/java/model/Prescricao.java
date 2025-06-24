@@ -8,7 +8,7 @@ import framework.Id;
 import java.time.LocalDate;
 
 @Entity(tableName = "prescricao")
-public class Prescricao extends FrameworkClass {
+public class Prescricao{
     @Id
     @Column
     private Long id;

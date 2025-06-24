@@ -7,14 +7,17 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FrameworkClass {
+public class FrameworkClass {
     String urlDB;
     String userDB;
     String passDB;
 
-    public FrameworkClass(){
+    public FrameworkClass(String urlDB, String userDB, String passDB){
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
+            this.urlDB = urlDB;
+            this.userDB = userDB;
+            this.passDB = passDB;
         } catch (ClassNotFoundException e) {
             System.out.println(e.getMessage());
         }
@@ -101,8 +104,8 @@ public abstract class FrameworkClass {
     }
 
 
-    public void save() {
-        Class<?> clazz = this.getClass();
+    public void save(Object entity) {
+        Class<?> clazz = entity.getClass();
         if (!clazz.isAnnotationPresent(Entity.class)) {
             System.out.println("Class is not an Entity");
             return;
@@ -116,7 +119,7 @@ public abstract class FrameworkClass {
             return;
         }
 
-        Object idValue = getValue(idField, this);
+        Object idValue = getValue(idField, entity);
         String idColumn = getColumnName(idField);
 
         List<Field> allColumns = getColumnFields(clazz);
@@ -130,7 +133,7 @@ public abstract class FrameworkClass {
             }
         }
 
-        if (this.verifyExistence()) {
+        if (verifyExistence(entity)) {
             String updateColumns = "";
             for (int i = 0; i < columnNames.size(); i++) {
                 updateColumns += columnNames.get(i) + " = ?";
@@ -146,7 +149,7 @@ public abstract class FrameworkClass {
 
                 int i = 0;
                 for (; i < fieldsToInsert.size(); i++) {
-                    Object value = getValue(fieldsToInsert.get(i), this);
+                    Object value = getValue(fieldsToInsert.get(i), entity);
                     stmt.setObject(i + 1, value);
                 }
 
@@ -178,7 +181,7 @@ public abstract class FrameworkClass {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < fieldsToInsert.size(); i++) {
-                Object value = getValue(fieldsToInsert.get(i), this);
+                Object value = getValue(fieldsToInsert.get(i), entity);
                 stmt.setObject(i + 1, value);
             }
 
@@ -192,7 +195,7 @@ public abstract class FrameworkClass {
 
 
 
-    public static <T extends FrameworkClass> List<T> loadAll(Class<T> clazz, String urlDB, String userDB, String passDB) {
+    public static <T extends Object> List<T> loadAll(Class<T> clazz, String urlDB, String userDB, String passDB) {
         List<T> results = new ArrayList<>();
 
         if (!clazz.isAnnotationPresent(Entity.class)) {
@@ -211,9 +214,6 @@ public abstract class FrameworkClass {
 
             while (rs.next()) {
                 T instance = clazz.getDeclaredConstructor().newInstance();
-                instance.setUrlDB(urlDB);
-                instance.setUserDB(userDB);
-                instance.setPassDB(passDB);
 
                 for (Field field : columns) {
                     String colName = getColumnName(field);
@@ -231,8 +231,8 @@ public abstract class FrameworkClass {
         return results;
     }
 
-    public boolean verifyExistence() {
-        Class<?> clazz = this.getClass();
+    public boolean verifyExistence(Object entity) {
+        Class<?> clazz = entity.getClass();
 
         if (!clazz.isAnnotationPresent(Entity.class)) {
             System.out.println("Class is not an Entity");
@@ -247,7 +247,7 @@ public abstract class FrameworkClass {
             return false;
         }
 
-        Object idValue = getValue(idField, this);
+        Object idValue = getValue(idField, entity);
         if (idValue == null) {
             System.out.println("ID not defined.");
             return false;
@@ -274,11 +274,8 @@ public abstract class FrameworkClass {
         }
     }
 
-
-
-
-    public boolean findById() {
-        Class<?> clazz = this.getClass();
+    public boolean findById(Object entity) {
+        Class<?> clazz = entity.getClass();
         if (!clazz.isAnnotationPresent(Entity.class)) {
             System.out.println("Class is not an Entity");
             return false;
@@ -292,7 +289,7 @@ public abstract class FrameworkClass {
             return false;
         }
 
-        Object idValue = getValue(idField, this);
+        Object idValue = getValue(idField, entity);
         if (idValue == null) {
             System.out.println("ID value is null");
             return false;
@@ -312,7 +309,7 @@ public abstract class FrameworkClass {
                 for (Field field : columns) {
                     String colName = getColumnName(field);
                     Object value = rs.getObject(colName);
-                    setValue(field, this, value);
+                    setValue(field, entity, value);
                 }
                 return true;
             } else {
@@ -327,8 +324,8 @@ public abstract class FrameworkClass {
     }
 
 
-    public void find(String fieldName, Object value) {
-        Class<?> clazz = this.getClass();
+    public void find(String fieldName, Object value, Object entity) {
+        Class<?> clazz = entity.getClass();
         if (!clazz.isAnnotationPresent(Entity.class)) {
             System.out.println("Class is not an Entity");
             return;
@@ -364,7 +361,7 @@ public abstract class FrameworkClass {
                 for (Field field : columns) {
                     String colName = getColumnName(field);
                     Object fieldValue = rs.getObject(colName);
-                    setValue(field, this, fieldValue);
+                    setValue(field, entity, fieldValue);
                 }
             } else {
                 System.out.println("No record found with " + columnName + " = " + value);

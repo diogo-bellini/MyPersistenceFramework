@@ -4,7 +4,7 @@ import framework.Column;
 import framework.FrameworkClass;
 import framework.Id;
 
-public abstract class Usuario extends FrameworkClass {
+public abstract class Usuario{
     @Id
     @Column
     private Long id;

@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity(tableName = "agendamento_consulta")
-public class AgendamentoConsulta extends FrameworkClass {
+public class AgendamentoConsulta{
     @Id
     @Column
     private Long id;

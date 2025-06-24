@@ -6,7 +6,7 @@ import framework.Entity;
 import framework.Id;
 
 @Entity(tableName = "TestName")
-public class Teste extends FrameworkClass {
+public class Teste{
 
     @Id
     @Column
