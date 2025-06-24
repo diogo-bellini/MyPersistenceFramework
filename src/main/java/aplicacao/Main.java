@@ -1,9 +1,7 @@
 package aplicacao;
 
 import framework.FrameworkClass;
-import model.Consulta;
-import model.Medico;
-import model.Teste;
+import model.*;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -16,29 +14,27 @@ public class Main {
 //        testeInstance.setUserDB("root");
 //        testeInstance.setPassDB("root");
 //
-        List<Medico> testes = FrameworkClass.loadAll(Medico.class, "jdbc:mysql://127.0.0.1:3306/ATA2?useSSL=false&serverTimezone=America/Sao_Paulo", "root", "root");
-        for (Medico teste : testes) {
-            System.out.println(teste.getNome() + "-" + teste.getEmail());
-        }
 
-
-        String a = "jdbc:mysql://127.0.0.1:3306/ATA2?useSSL=false&serverTimezone=America/Sao_Paulo";
+        String a = "jdbc:mysql://127.0.0.1:3306/sistema_consultas?useSSL=false&serverTimezone=America/Sao_Paulo";
         String b = "root";
 
         FrameworkClass frameworkClassInstance = new FrameworkClass(a, b, b);
 
-        Medico medico2 = new Medico();
-        medico2.setEspecialidade("dermatologista");
-        medico2.setEmail("leo.morikio@gmail.com");
-        medico2.setNome("leo");
-        medico2.setSenha("1234");
-        //frameworkClassInstance.save(medico2);
         Medico medico = new Medico();
         medico.setEspecialidade("dermatologista");
         String campo = "especialidade";
         frameworkClassInstance.find(campo, medico.getEspecialidade(), medico);
-        System.out.println(medico.getEmail());
 
+        List<Medico> testes = frameworkClassInstance.loadAll(Medico.class);
+        //for (Medico teste : testes) {
+        //    System.out.println(teste.getNome() + "-" + teste.getEmail());
+        //}
+
+        Paciente paciente = new Paciente();
+        Diagnostico diagnostico = new Diagnostico();
+        diagnostico.setDescricao("teste");
+        diagnostico.setConsulta_id(12L);
+        frameworkClassInstance.save(diagnostico);
 
 
     }

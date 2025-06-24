@@ -195,7 +195,7 @@ public class FrameworkClass {
 
 
 
-    public static <T extends Object> List<T> loadAll(Class<T> clazz, String urlDB, String userDB, String passDB) {
+    public <T extends Object> List<T> loadAll(Class<T> clazz) {
         List<T> results = new ArrayList<>();
 
         if (!clazz.isAnnotationPresent(Entity.class)) {
@@ -206,7 +206,7 @@ public class FrameworkClass {
         String tableName = getTableName(clazz);
         String sql = "SELECT * FROM " + tableName;
 
-        try (Connection conn = DriverManager.getConnection(urlDB, userDB, passDB);
+        try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
              PreparedStatement stmt = conn.prepareStatement(sql);
              var rs = stmt.executeQuery()) {
 
