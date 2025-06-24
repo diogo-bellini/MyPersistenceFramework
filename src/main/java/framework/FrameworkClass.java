@@ -28,13 +28,14 @@ public abstract class FrameworkClass {
         String tableName = entity.tableName();
         if (tableName.trim().isEmpty()) {
             tableName = clazz.getSimpleName();
+            tableName = tableName.toLowerCase();
         }
         return tableName;
     }
 
     private static List<Field> getColumnFields(Class<?> clazz) {
         List<Field> result = new ArrayList<>();
-        Field[] fields = clazz.getDeclaredFields();
+        List<Field> fields = getAllFieldsIncludingInherited(clazz);
         for (Field field : fields) {
             if (field.isAnnotationPresent(Column.class)) {
                 result.add(field);
@@ -44,13 +45,31 @@ public abstract class FrameworkClass {
     }
 
     private static Field getIdField(Class<?> clazz) {
-        Field[] fields = clazz.getDeclaredFields();
+        List<Field> fields = getAllFieldsIncludingInherited(clazz);
         for (Field field : fields) {
             if (field.isAnnotationPresent(Id.class) && field.isAnnotationPresent(Column.class)) {
                 return field;
             }
         }
         return null;
+    }
+
+    private static List<Field> getAllFieldsIncludingInherited(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+
+        while (clazz != null && clazz != Object.class) {
+            for (Field field : clazz.getDeclaredFields()) {
+                fields.add(field);
+            }
+
+            if (clazz.isAnnotationPresent(framework.Inherited.class)) {
+                clazz = clazz.getSuperclass();
+            } else {
+                break;
+            }
+        }
+
+        return fields;
     }
 
     private static String getColumnName(Field field) {
