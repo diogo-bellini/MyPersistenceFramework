@@ -206,7 +206,7 @@ public class FrameworkClass {
 
 
 
-    public <T extends Object> List<T> loadAll(Class<T> clazz) {
+    public <T> List<T> loadAll(Class<T> clazz) {
         List<T> results = new ArrayList<>();
 
         if (!clazz.isAnnotationPresent(Entity.class)) {
