@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -178,7 +179,7 @@ public class FrameworkClass {
         String sql = "INSERT INTO " + tableName + " (" + columnsString + ") VALUES (" + placeholders + ")";
 
         try (Connection conn = DriverManager.getConnection(this.urlDB, this.userDB, this.passDB);
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             for (int i = 0; i < fieldsToInsert.size(); i++) {
                 Object value = getValue(fieldsToInsert.get(i), entity);
@@ -187,6 +188,16 @@ public class FrameworkClass {
 
             System.out.println(stmt.toString());
             stmt.executeUpdate();
+
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    long id = generatedKeys.getLong(1);
+                    setValue(idField, entity, id);
+                    System.out.println("ID gerado: " + id);
+                } else {
+                    System.out.println("Nenhum ID gerado foi retornado.");
+                }
+            }
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
